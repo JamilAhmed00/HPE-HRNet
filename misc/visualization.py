@@ -83,9 +83,9 @@ def joints_dict():
                 13: "xyz"  # Middle point between left_shoulder and right_shoulder
             },
             "skeleton": [
-                [11, 9], [9, 7], [12, 10], [10, 8], [7, 8], 
+                [11, 9], [9, 7], [12, 10], [10, 8], [7, 8],  
                 [1, 7], [2, 8], [1, 2], [1, 3], [2, 4], 
-                [3, 5], [4, 6], [0, 1], [0, 2], [0, 13]  # Add edge from nose to xyz
+                [3, 5], [4, 6], [0, 13]  # Add edge from nose to xyz
             ]
         }
     }
