@@ -85,7 +85,7 @@ def joints_dict():
             "skeleton": [
                 [11, 9], [9, 7], [12, 10], [10, 8], [7, 8],  
                 [1, 7], [2, 8], [1, 2], [1, 3], [2, 4], 
-                [3, 5], [4, 6], [0, 13]  # Add edge from nose to xyz
+                [3, 5], [4, 6]  # Add edge from nose to xyz, [0, 13]
             ]
         }
     }
