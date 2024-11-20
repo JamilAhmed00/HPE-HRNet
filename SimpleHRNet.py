@@ -34,7 +34,8 @@ class SimpleHRNet:
                  yolo_class_path="./models_/detectors/yolo/data/coco.names",
                  yolo_weights_path="./models_/detectors/yolo/weights/yolov3.weights",
                  device=torch.device("cpu"),
-                 enable_tensorrt=False):
+                 enable_tensorrt=False,
+                 custom_keypoints=True):
         """
         Initializes a new SimpleHRNet object.
         HRNet (and YOLOv3) are initialized on the torch.device("device") and
@@ -171,45 +172,85 @@ class SimpleHRNet:
                 transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
             ])
 
-    def predict(self, image):
-        """
-        Predicts the human pose on a single image or a stack of n images.
+   def predict(self, image):
+    """
+    Predicts the human pose on a single image or a stack of n images.
 
-        Args:
-            image (:class:`np.ndarray`):
-                the image(s) on which the human pose will be estimated.
+    Args:
+        image (:class:`np.ndarray`):
+            the image(s) on which the human pose will be estimated.
 
-                image is expected to be in the opencv format.
-                image can be:
-                    - a single image with shape=(height, width, BGR color channel)
-                    - a stack of n images with shape=(n, height, width, BGR color channel)
+            image is expected to be in the opencv format.
+            image can be:
+                - a single image with shape=(height, width, BGR color channel)
+                - a stack of n images with shape=(n, height, width, BGR color channel)
 
-        Returns:
-            :class:`np.ndarray` or list:
-                a numpy array containing human joints for each (detected) person.
+    Returns:
+        :class:`np.ndarray` or list:
+            a numpy array containing human joints for each (detected) person.
 
-                Format:
-                    if image is a single image:
-                        shape=(# of people, # of joints (nof_joints), 3);  dtype=(np.float32).
-                    if image is a stack of n images:
-                        list of n np.ndarrays with
-                        shape=(# of people, # of joints (nof_joints), 3);  dtype=(np.float32).
+            Format:
+                if image is a single image:
+                    shape=(# of people, # of joints (nof_joints), 3);  dtype=(np.float32).
+                if image is a stack of n images:
+                    list of n np.ndarrays with
+                    shape=(# of people, # of joints (nof_joints), 3);  dtype=(np.float32).
 
-                Each joint has 3 values: (y position, x position, joint confidence).
+            Each joint has 3 values: (y position, x position, joint confidence).
 
-                If self.return_heatmaps, the class returns a list with (heatmaps, human joints)
-                If self.return_bounding_boxes, the class returns a list with (bounding boxes, human joints)
-                If self.return_heatmaps and self.return_bounding_boxes, the class returns a list with
-                    (heatmaps, bounding boxes, human joints)
-        """
-        if len(image.shape) == 3:
-            return self._predict_single(image)
-        elif len(image.shape) == 4:
-            return self._predict_batch(image)
-        else:
-            raise ValueError('Wrong image format.')
+            If self.return_heatmaps, the class returns a list with (heatmaps, human joints)
+            If self.return_bounding_boxes, the class returns a list with (bounding boxes, human joints)
+            If self.return_heatmaps and self.return_bounding_boxes, the class returns a list with
+                (heatmaps, bounding boxes, human joints)
+    """
+    # Check input image dimensions
+     if len(image.shape) == 3:
+        keypoints = self._predict_single(image)
+     elif len(image.shape) == 4:
+        keypoints = self._predict_batch(image)
+     else:
+        raise ValueError('Wrong image format.')
 
-    def _predict_single(self, image):
+    # Process for custom keypoints if enabled
+     if hasattr(self, "custom_keypoints") and self.custom_keypoints:
+        keypoints = self._convert_to_custom_keypoints(keypoints)
+
+     return keypoints
+
+
+
+   def _convert_to_custom_keypoints(self, keypoints):
+    """
+    Converts the output keypoints from 17 to 14 custom keypoints.
+
+    Args:
+        keypoints (:class:`np.ndarray`):
+            A numpy array containing 17 keypoints (y, x, confidence) for each person.
+
+    Returns:
+        :class:`np.ndarray`:
+            A numpy array containing 14 custom keypoints (y, x, confidence) for each person.
+    """
+    # Indices for the 14 custom keypoints
+    custom_indices = [0, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
+
+    # Calculate the xyz keypoint (midpoint of left_shoulder and right_shoulder)
+    left_shoulder = keypoints[:, 5, :2]  # (y, x) for left_shoulder
+    right_shoulder = keypoints[:, 6, :2]  # (y, x) for right_shoulder
+    xyz = (left_shoulder + right_shoulder) / 2  # Midpoint (y, x)
+    xyz_confidence = (keypoints[:, 5, 2] + keypoints[:, 6, 2]) / 2  # Average confidence
+
+    # Filter for the 14 keypoints
+    custom_keypoints = keypoints[:, custom_indices, :]
+
+    # Add xyz as the 14th keypoint
+    xyz_with_confidence = np.concatenate([xyz, xyz_confidence[:, np.newaxis]], axis=1)
+    custom_keypoints = np.concatenate([custom_keypoints, xyz_with_confidence[:, np.newaxis, :]], axis=1)
+
+    return custom_keypoints
+
+
+   def _predict_single(self, image):
         if not self.multiperson:
             old_res = image.shape
             if self.resolution is not None:
