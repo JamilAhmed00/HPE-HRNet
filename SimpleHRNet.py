@@ -172,7 +172,7 @@ class SimpleHRNet:
                 transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
             ])
 
-   def predict(self, image):
+    def predict(self, image):
     """
     Predicts the human pose on a single image or a stack of n images.
 
@@ -204,18 +204,18 @@ class SimpleHRNet:
                 (heatmaps, bounding boxes, human joints)
     """
     # Check input image dimensions
-     if len(image.shape) == 3:
+    if len(image.shape) == 3:
         keypoints = self._predict_single(image)
-     elif len(image.shape) == 4:
+    elif len(image.shape) == 4:
         keypoints = self._predict_batch(image)
-     else:
+    else:
         raise ValueError('Wrong image format.')
 
     # Process for custom keypoints if enabled
-     if hasattr(self, "custom_keypoints") and self.custom_keypoints:
+    if hasattr(self, "custom_keypoints") and self.custom_keypoints:
         keypoints = self._convert_to_custom_keypoints(keypoints)
 
-     return keypoints
+    return keypoints
 
 
 
@@ -248,6 +248,7 @@ class SimpleHRNet:
     custom_keypoints = np.concatenate([custom_keypoints, xyz_with_confidence[:, np.newaxis, :]], axis=1)
 
     return custom_keypoints
+
 
 
    def _predict_single(self, image):
