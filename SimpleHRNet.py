@@ -210,9 +210,9 @@ class SimpleHRNet:
         else:
             raise ValueError('Wrong image format.')
         
-	    if hasattr(self, "custom_keypoints") and self.custom_keypoints:
+	if hasattr(self, "custom_keypoints") and self.custom_keypoints:
       
-            keypoints = self._convert_to_custom_keypoints(keypoints)
+                keypoints = self._convert_to_custom_keypoints(keypoints)
 
         return keypoints
     
