@@ -82,6 +82,8 @@ class SimpleHRNet:
                 Default: False
         """
 
+
+        super(SimpleHRNet, self).__init__()
         self.c = c
         self.nof_joints = nof_joints
         self.checkpoint_path = checkpoint_path
@@ -98,6 +100,7 @@ class SimpleHRNet:
         self.yolo_weights_path = yolo_weights_path
         self.device = device
         self.enable_tensorrt = enable_tensorrt
+        self.custom_keypoints = custom_keypoints
 
         if self.multiperson:
             if self.yolo_version == 'v3':
@@ -113,13 +116,34 @@ class SimpleHRNet:
             self.model = PoseResNet(resnet_size=c, nof_joints=nof_joints)
         else:
             raise ValueError('Wrong model name.')
+        
+        checkpoint = torch.load(checkpoint_path, map_location=self.device)
 
         if not self.enable_tensorrt:
-            checkpoint = torch.load(checkpoint_path, map_location=self.device)
+            
             if 'model' in checkpoint:
                 self.model.load_state_dict(checkpoint['model'])
             else:
                 self.model.load_state_dict(checkpoint)
+                
+                
+                
+             # Handle custom keypoints if required
+            if self.custom_keypoints:
+                print("Using custom keypoints. Adapting final layer...")
+                pretrained_weight = state_dict['final_layer.weight']
+                pretrained_bias = state_dict['final_layer.bias']
+
+                # Update `final_layer` dimensions
+                self.model.final_layer = nn.Conv2d(c, nof_joints, kernel_size=1, stride=1, padding=0)
+
+                with torch.no_grad():
+                    self.model.final_layer.weight[:pretrained_weight.shape[0]] = pretrained_weight[:nof_joints]
+                    self.model.final_layer.bias[:pretrained_bias.shape[0]] = pretrained_bias[:nof_joints]
+            else:
+                self.model.load_state_dict(state_dict)
+                
+                
 
             if 'cuda' in str(self.device):
                 print("device: 'cuda' - ", end="")
