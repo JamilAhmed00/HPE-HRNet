@@ -210,45 +210,57 @@ class SimpleHRNet:
         else:
             raise ValueError('Wrong image format.')
         
-	if hasattr(self, "custom_keypoints") and self.custom_keypoints:
-      
+        
+        if hasattr(self, "custom_keypoints") and self.custom_keypoints:
             keypoints = self._convert_to_custom_keypoints(keypoints)
-
+        
         return keypoints
-    
+        
+	    
     
     
     
     def _convert_to_custom_keypoints(self, keypoints):
         
-		"""
-		Converts the output keypoints from 17 to 14 custom keypoints.
+	    
+  
 
-		Args:
-			keypoints (:class:`np.ndarray`):
-				A numpy array containing 17 keypoints (y, x, confidence) for each person.
-
-		Returns:
-			:class:`np.ndarray`:
-				A numpy array containing 14 custom keypoints (y, x, confidence) for each person.
-		"""
 		# Indices for the 14 custom keypoints
-		custom_indices = [0, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
+  
+        custom_indices = [0, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
+        
+    
+        
+        
+        custom_indices = [0, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
 
 		# Calculate the xyz keypoint (midpoint of left_shoulder and right_shoulder)
-		left_shoulder = keypoints[:, 5, :2]  # (y, x) for left_shoulder
-		right_shoulder = keypoints[:, 6, :2]  # (y, x) for right_shoulder
-		xyz = (left_shoulder + right_shoulder) / 2  # Midpoint (y, x)
-		xyz_confidence = (keypoints[:, 5, 2] + keypoints[:, 6, 2]) / 2  # Average confidence
+        left_shoulder = keypoints[:, 5, :2] 
+        
+        right_shoulder = keypoints[:, 6, :2]
+        xyz = (left_shoulder + right_shoulder) / 2  # Midpoint (y, x)
+	
+		    
+      
+        xyz_confidence = (keypoints[:, 5, 2] + keypoints[:, 6, 2]) / 2  # Average confidence
 
 		# Filter for the 14 keypoints
-		custom_keypoints = keypoints[:, custom_indices, :]
+		   
+     
+     
+        custom_keypoints = keypoints[:, custom_indices, :]
 
 		# Add xyz as the 14th keypoint
-		xyz_with_confidence = np.concatenate([xyz, xyz_confidence[:, np.newaxis]], axis=1)
-		custom_keypoints = np.concatenate([custom_keypoints, xyz_with_confidence[:, np.newaxis, :]], axis=1)
+		   
+     
+        xyz_with_confidence = np.concatenate([xyz, xyz_confidence[:, np.newaxis]], axis=1)
+	    
+     
+        custom_keypoints = np.concatenate([custom_keypoints, xyz_with_confidence[:, np.newaxis, :]], axis=1)
 
-		return custom_keypoints
+		   
+     
+        return custom_keypoints
 
 
 
