@@ -212,7 +212,7 @@ class SimpleHRNet:
         
 	if hasattr(self, "custom_keypoints") and self.custom_keypoints:
       
-                keypoints = self._convert_to_custom_keypoints(keypoints)
+            keypoints = self._convert_to_custom_keypoints(keypoints)
 
         return keypoints
     
