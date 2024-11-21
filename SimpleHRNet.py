@@ -138,8 +138,16 @@ class SimpleHRNet:
                 self.model.final_layer = nn.Conv2d(c, nof_joints, kernel_size=1, stride=1, padding=0)
 
                 with torch.no_grad():
-                    self.model.final_layer.weight[:pretrained_weight.shape[0]] = pretrained_weight[:nof_joints]
-                    self.model.final_layer.bias[:pretrained_bias.shape[0]] = pretrained_bias[:nof_joints]
+                    # self.model.final_layer.weight[:pretrained_weight.shape[0]] = pretrained_weight[:nof_joints]
+                    # self.model.final_layer.bias[:pretrained_bias.shape[0]] = pretrained_bias[:nof_joints]
+                    
+                    self.model.final_layer.weight[:min(14, 17)] = pretrained_weight[:min(14, 17)]
+                    self.model.final_layer.bias[:min(14, 17)] = pretrained_bias[:min(14, 17)]
+
+                    # Initialize remaining weights (if any) randomly
+                    if self.nof_joints > 17:
+                       nn.init.kaiming_normal_(self.model.final_layer.weight[17:])
+                       nn.init.zeros_(self.model.final_layer.bias[17:])
             else:
                 self.model.load_state_dict(state_dict)
                 
@@ -251,7 +259,6 @@ class SimpleHRNet:
 
 		# Indices for the 14 custom keypoints
   
-        custom_indices = [0, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
         
     
         
